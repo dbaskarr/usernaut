@@ -12,4 +12,4 @@ spec:
         - key: kubernetes.io/metadata.name
           operator: In
           values:
-            - ddis-asteroid--usernaut-rhpreprod
+            - ddis-asteroid--usernaut-aif-rhpreprod
