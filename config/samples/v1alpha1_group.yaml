@@ -2,18 +2,27 @@ apiVersion: operator.dataverse.redhat.com/v1alpha1
 kind: Group
 metadata:
   labels:
-    app.kubernetes.io/name: ddis-asteroid--usernaut-rhplatformtest
+    app.kubernetes.io/name: usernaut
     app.kubernetes.io/managed-by: kustomize
   name: dataverse-aggregate-mygroup
-  namespace: ddis-asteroid--usernaut-rhplatformtest
+  namespace: usernaut
 spec:
-  group_name: aif-dataverse-aggregate-mygroup
+  group_name: dataverse-aggregate-mygroup
   members:
    users:
     - subhatta
     - bdebnath
     - 783m
     - 5dlb
-  group_params: []
-  backends: []
+  group_params:
+    - backend: gitlab
+      name: gitlab
+      property: project_access_paths
+      value:
+        - dataverse/datavers-config/dataproduct-config
+        - dataverse/astro/astro-toolkit
+        - dataverse/platform-tooling/fivetran_terraform
+  backends:
+  - name: fivetran
+    type: fivetran
   
