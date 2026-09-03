@@ -8,8 +8,5 @@ spec:
     - Deny
   matchResources:
     namespaceSelector:
-      matchExpressions:
-        - key: kubernetes.io/metadata.name
-          operator: In
-          values:
-            - ddis-asteroid--usernaut-aif-rhprod
+      matchLabels:
+        kubernetes.io/metadata.name: ddis-asteroid--usernaut-aif-rhprod

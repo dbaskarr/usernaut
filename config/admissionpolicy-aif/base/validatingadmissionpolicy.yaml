@@ -16,5 +16,5 @@ spec:
         resources:
           - groups
   validations:
-    - expression: object.spec.group_name.startsWith('aif')
-      message: Group spec.group_name must start with 'aif'
+    - expression: object.spec.group_name.startsWith('aif-')
+      message: Group spec.group_name must start with 'aif-'
