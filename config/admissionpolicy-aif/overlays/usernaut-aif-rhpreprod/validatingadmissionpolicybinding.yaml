@@ -3,7 +3,7 @@ kind: ValidatingAdmissionPolicyBinding
 metadata:
   name: usernaut-aif-cr-name-prefix-policybinding
 spec:
-  policyName: usernaut-aif-cr-name-prefix
+  policyName: usernaut-aif-cr-name-prefix-policy
   validationActions:
     - Deny
   matchResources:

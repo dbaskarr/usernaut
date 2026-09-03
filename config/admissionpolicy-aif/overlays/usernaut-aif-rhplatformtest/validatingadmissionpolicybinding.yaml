@@ -3,7 +3,7 @@ kind: ValidatingAdmissionPolicyBinding
 metadata:
   name: usernaut-aif-cr-name-prefix-policybinding
 spec:
-  policyName: usernaut-aif-cr-name-prefix
+  policyName: usernaut-aif-cr-name-prefix-policy
   validationActions:
     - Deny
   matchResources:
@@ -12,4 +12,4 @@ spec:
         - key: kubernetes.io/metadata.name
           operator: In
           values:
-            - ddis-asteroid--usernaut-ai-rhplatformtest
+            - ddis-asteroid--usernaut-aif-rhplatformtest
