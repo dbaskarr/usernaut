@@ -1,0 +1,15 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: usernaut-aif-cr-name-prefix-policybinding
+spec:
+  policyName: usernaut-aif-cr-name-prefix
+  validationActions:
+    - Deny
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - ddis-asteroid--usernaut-rhplatformtest

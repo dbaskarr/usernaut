@@ -233,6 +233,18 @@ configure-usernaut-rhprod:
 	@ENVIRONMENT=rhprod bash ./scripts/configmap.sh
 	$(KUSTOMIZE) build config/manual-rbac/overlays/usernaut-rhprod/ | $(KUBECTL) apply -f -
 
+.PHONY: configure-usernaut-aif-rhprod
+configure-usernaut-aif-rhprod:
+	$(KUSTOMIZE) build config/admissionpolicy-aif/overlays/usernaut-aif-rhprod/ | $(KUBECTL) apply -f -
+
+.PHONY: configure-usernaut-aif-rhpreprod
+configure-usernaut-aif-rhpreprod:
+	$(KUSTOMIZE) build config/admissionpolicy-aif/overlays/usernaut-aif-rhpreprod/ | $(KUBECTL) apply -f -
+
+.PHONY: configure-usernaut-aif-rhplatformtest
+configure-usernaut-aif-rhplatformtest:
+	$(KUSTOMIZE) build config/admissionpolicy-aif/overlays/usernaut-aif-rhplatformtest/ | $(KUBECTL) apply -f -
+
 .PHONY: destroy-usernaut-rhplatformtest
 destroy-usernaut-rhplatformtest:
 	$(KUSTOMIZE) build config/rbac-admin-sa/overlays/rhplatformtest/ | $(KUBECTL) delete --ignore-not-found -f -
@@ -241,6 +253,18 @@ destroy-usernaut-rhplatformtest:
 .PHONY: destroy-usernaut-rhprod
 destroy-usernaut-rhprod:
 	$(KUSTOMIZE) build config/manual-rbac/overlays/usernaut-rhprod/ | $(KUBECTL) delete --ignore-not-found -f -
+
+.PHONY: destroy-usernaut-aif-rhprod
+destroy-usernaut-aif-rhprod:
+	$(KUSTOMIZE) build config/admissionpolicy-aif/overlays/usernaut-aif-rhprod/ | $(KUBECTL) delete --ignore-not-found -f -
+
+.PHONY: destroy-usernaut-aif-rhpreprod
+destroy-usernaut-aif-rhpreprod:
+	$(KUSTOMIZE) build config/admissionpolicy-aif/overlays/usernaut-aif-rhpreprod/ | $(KUBECTL) delete --ignore-not-found -f -
+
+.PHONY: destroy-usernaut-aif-rhplatformtest
+destroy-usernaut-aif-rhplatformtest:
+	$(KUSTOMIZE) build config/admissionpolicy-aif/overlays/usernaut-aif-rhplatformtest/ | $(KUBECTL) delete --ignore-not-found -f -
 
 ##@ Dependencies
 
