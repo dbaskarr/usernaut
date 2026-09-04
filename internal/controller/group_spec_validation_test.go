@@ -33,6 +33,8 @@ var _ = Describe("Group spec validation", func() {
 
 	var specRules config.SpecValidationRulesConfig
 
+	supportedBackendTypes := []string{"rover"}
+
 	BeforeEach(func() {
 		specRules = config.SpecValidationRulesConfig{
 			aifNamespace: {
@@ -40,15 +42,21 @@ var _ = Describe("Group spec validation", func() {
 					GroupName: config.GroupNameValidationConfig{
 						Prefix: "aif-",
 					},
+					Backends: config.BackendsValidationConfig{
+						SupportedBackendTypes: supportedBackendTypes,
+					},
 				},
 			},
 		}
 	})
 
-	newGroup := func(groupName string) *usernautv1alpha1.Group {
+	newGroup := func(groupName string, backends ...usernautv1alpha1.Backend) *usernautv1alpha1.Group {
 		return &usernautv1alpha1.Group{
 			ObjectMeta: metav1.ObjectMeta{Name: groupName},
-			Spec:       usernautv1alpha1.GroupSpec{GroupName: groupName},
+			Spec: usernautv1alpha1.GroupSpec{
+				GroupName: groupName,
+				Backends:  backends,
+			},
 		}
 	}
 
@@ -76,6 +84,43 @@ var _ = Describe("Group spec validation", func() {
 		})
 	})
 
+	Describe("validateBackends", func() {
+		It("accepts backends in the supported list", func() {
+			group := newGroup("aif-mygroup",
+				usernautv1alpha1.Backend{Name: "rover", Type: "rover"},
+			)
+
+			err := validateBackends(group, specRules[aifNamespace].Group.Backends)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("rejects backends not in the supported list", func() {
+			group := newGroup("aif-mygroup",
+				usernautv1alpha1.Backend{Name: "snowflake", Type: "snowflake"},
+			)
+
+			err := validateBackends(group, specRules[aifNamespace].Group.Backends)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`spec.backends type "snowflake" is not supported`))
+		})
+
+		It("allows any backends when supportedBackendTypes is empty", func() {
+			group := newGroup("aif-mygroup",
+				usernautv1alpha1.Backend{Name: "rover", Type: "rover"},
+			)
+
+			err := validateBackends(group, config.BackendsValidationConfig{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("allows an empty backends list", func() {
+			group := newGroup("aif-mygroup")
+
+			err := validateBackends(group, specRules[aifNamespace].Group.Backends)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 	Describe("validate", func() {
 		It("skips namespaces without configured rules", func() {
 			group := newGroup("not-mygroup")
@@ -97,6 +142,16 @@ var _ = Describe("Group spec validation", func() {
 
 			err := validate(aifNamespace, group, specRules)
 			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("rejects unsupported backends in a configured namespace", func() {
+			group := newGroup("aif-mygroup",
+				usernautv1alpha1.Backend{Name: "snowflake", Type: "snowflake"},
+			)
+
+			err := validate(aifNamespace, group, specRules)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`spec.backends type "snowflake" is not supported`))
 		})
 	})
 })

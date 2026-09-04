@@ -18,6 +18,7 @@ package controller
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	usernautv1alpha1 "github.com/redhat-data-and-ai/usernaut/api/v1alpha1"
@@ -29,7 +30,29 @@ func validate(namespace string, group *usernautv1alpha1.Group, rules config.Spec
 	if !ok {
 		return nil
 	}
-	return validateGroupName(group, nsRules.Group.GroupName)
+	if err := validateGroupName(group, nsRules.Group.GroupName); err != nil {
+		return err
+	}
+
+	return validateBackends(group, nsRules.Group.Backends)
+}
+
+func validateBackends(group *usernautv1alpha1.Group, rule config.BackendsValidationConfig) error {
+	if len(rule.SupportedBackendTypes) == 0 {
+		return nil
+	}
+
+	for _, backend := range group.Spec.Backends {
+		if !slices.Contains(rule.SupportedBackendTypes, backend.Type) {
+			return fmt.Errorf(
+				"spec.backends type %q is not supported; supported backend types: %v",
+				backend.Type,
+				rule.SupportedBackendTypes,
+			)
+		}
+	}
+
+	return nil
 }
 
 func validateGroupName(group *usernautv1alpha1.Group, rule config.GroupNameValidationConfig) error {

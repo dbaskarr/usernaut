@@ -65,11 +65,17 @@ type ValidationRules struct {
 // GroupSpecValidationRules holds Group CR spec field validation rules.
 type GroupSpecValidationRules struct {
 	GroupName GroupNameValidationConfig `yaml:"groupName"`
+	Backends  BackendsValidationConfig  `yaml:"backends"`
 }
 
 // GroupNameValidationConfig defines group_name validation rules.
 type GroupNameValidationConfig struct {
 	Prefix string `yaml:"prefix"`
+}
+
+// BackendsValidationConfig holds backend validation rules for Group CRs.
+type BackendsValidationConfig struct {
+	SupportedBackendTypes []string `yaml:"supportedBackendTypes"`
 }
 
 type CORSConfig struct {
