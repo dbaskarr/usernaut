@@ -38,16 +38,16 @@ func validate(namespace string, group *usernautv1alpha1.Group, rules config.Spec
 }
 
 func validateBackends(group *usernautv1alpha1.Group, rule config.BackendsValidationConfig) error {
-	if len(rule.SupportedBackendTypes) == 0 {
+	if len(rule.AllowedBackendTypes) == 0 {
 		return nil
 	}
 
 	for _, backend := range group.Spec.Backends {
-		if !slices.Contains(rule.SupportedBackendTypes, backend.Type) {
+		if !slices.Contains(rule.AllowedBackendTypes, backend.Type) {
 			return fmt.Errorf(
-				"spec.backends type %q is not supported; supported backend types: %v",
+				"spec.backends type %q is not allowed; allowed backend types: %v",
 				backend.Type,
-				rule.SupportedBackendTypes,
+				rule.AllowedBackendTypes,
 			)
 		}
 	}

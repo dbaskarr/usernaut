@@ -75,7 +75,7 @@ type GroupNameValidationConfig struct {
 
 // BackendsValidationConfig holds backend validation rules for Group CRs.
 type BackendsValidationConfig struct {
-	SupportedBackendTypes []string `yaml:"supportedBackendTypes"`
+	AllowedBackendTypes []string `yaml:"allowedBackendTypes"`
 }
 
 type CORSConfig struct {
