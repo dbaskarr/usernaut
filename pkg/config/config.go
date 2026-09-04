@@ -68,7 +68,7 @@ type GroupSpecValidationRules struct {
 	Backends  BackendsValidationConfig  `yaml:"backends"`
 }
 
-// GroupNameValidationConfig defines group_name validation rules.
+// GroupNameValidationConfig defines group_name validation rules for Group CRs.
 type GroupNameValidationConfig struct {
 	Prefix string `yaml:"prefix"`
 }
