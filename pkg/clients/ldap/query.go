@@ -76,17 +76,17 @@ func parseUIDFromDN(dn *ldap.DN) string {
 	return ""
 }
 
-func (l *LDAPConn) BuildLDAPQueryFromSpec(ctx context.Context, query *v1alpha1.LDAPQuery) (string, error) {
+func (l *LDAPConn) BuildLDAPQueryString(ctx context.Context, query *v1alpha1.LDAPQuery) (string, error) {
 	log := logger.Logger(ctx).WithField("build_ldap_query", "spec")
-	log.WithField("query", query).Info("building LDAP query from spec")
+	log.WithField("query", query).Info("building LDAP query string from spec")
 
 	if query == nil {
 		return "", errors.New("ldap query is nil")
 	}
-	return buildQueryFromSpec(query, l.baseUserDN, 1)
+	return buildQueryString(query, l.baseUserDN, 1)
 }
 
-func buildQueryFromSpec(query *v1alpha1.LDAPQuery, baseUserDN string, depth int) (string, error) {
+func buildQueryString(query *v1alpha1.LDAPQuery, baseUserDN string, depth int) (string, error) {
 	if depth > v1alpha1.MaxLDAPQueryDepth {
 		return "", fmt.Errorf("ldap query nesting exceeds maximum depth of %d", v1alpha1.MaxLDAPQueryDepth)
 	}
@@ -123,19 +123,13 @@ func buildFilterItem(filter v1alpha1.LDAPFilter, baseUserDN string, depth int) (
 	}
 
 	if hasNested {
-		return buildNestedQueryFromSpec(filter.LDAPQuery, baseUserDN, depth+1)
+		return buildQueryString(&v1alpha1.LDAPQuery{
+			Operator: filter.LDAPQuery.Operator,
+			Filters:  filter.LDAPQuery.Filters,
+		}, baseUserDN, depth+1)
 	}
-	return buildSimpleFilter(filter, baseUserDN)
-}
 
-func buildNestedQueryFromSpec(query *v1alpha1.LDAPNestedQuery, baseUserDN string, depth int) (string, error) {
-	if query == nil {
-		return "", errors.New("ldap query is nil")
-	}
-	return buildQueryFromSpec(&v1alpha1.LDAPQuery{
-		Operator: query.Operator,
-		Filters:  query.Filters,
-	}, baseUserDN, depth)
+	return buildSimpleFilter(filter, baseUserDN)
 }
 
 func buildSimpleFilter(filter v1alpha1.LDAPFilter, baseUserDN string) (string, error) {

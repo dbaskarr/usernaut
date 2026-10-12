@@ -306,7 +306,7 @@ func (r *GroupReconciler) expandQueryMembers(
 
 	log.WithField("ldap_query", query).Info("building query string from YAML")
 
-	queryString, err := r.LdapConn.BuildLDAPQueryFromSpec(ctx, query)
+	queryString, err := r.LdapConn.BuildLDAPQueryString(ctx, query)
 	if err != nil {
 		log.WithError(err).Error("failed to build ldap query from spec")
 		return nil, err

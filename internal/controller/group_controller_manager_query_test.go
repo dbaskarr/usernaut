@@ -514,7 +514,7 @@ func (s *orgLDAPStub) GetUserLDAPDataByEmail(context.Context, string) (map[strin
 	return nil, nil
 }
 
-func (s *orgLDAPStub) BuildLDAPQueryFromSpec(_ context.Context, query *usernautdevv1alpha1.LDAPQuery) (string, error) {
+func (s *orgLDAPStub) BuildLDAPQueryString(_ context.Context, query *usernautdevv1alpha1.LDAPQuery) (string, error) {
 	return "mgr:" + managerUIDFromQuery(query), nil
 }
 
