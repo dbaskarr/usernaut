@@ -13,6 +13,7 @@ import (
 type Client interface {
 	BuildLDAPQueryString(ctx context.Context, query *v1alpha1.LDAPQuery) (string, error)
 	GetQueryMembers(ctx context.Context, query string, attributes []string) (types.QueryMembers, error)
+	GetBulkUserLDAPData(ctx context.Context, userIDs []string) (map[string]map[string]interface{}, error)
 }
 
 // Service resolves a Group CR membership query into member UIDs
@@ -37,6 +38,19 @@ func (s *Service) Members(ctx context.Context, query *v1alpha1.LDAPQuery) ([]str
 
 	resultOptions := queryResultOptions(query)
 
+	// Query members already include manager attrs when OfMembers options are set.
+	// include_manager filter UIDs are UID-only until verified via bulk LDAP.
+	managersInQuery := extractManagersInfoFromQuery(query)
+	if len(managersInQuery) > 0 {
+		managersInQuery, err = s.fetchBulkUserLDAPData(ctx, managersInQuery.UIDs())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	managers = append(managers, managersInQuery...)
+	members = append(members, managersInQuery...)
+
 	if queryHasOnlyManagers(query) {
 		members = managers
 	}
@@ -47,9 +61,33 @@ func (s *Service) Members(ctx context.Context, query *v1alpha1.LDAPQuery) ([]str
 		members = append(members, members.Managers()...)
 	}
 
-	members = append(members, extractManagersInfoFromQuery(query)...)
-
 	return members.Dedupe().UIDs(), nil
+}
+
+// fetchBulkUserLDAPData loads manager DNs for the given UIDs via GetBulkUserLDAPData.
+// UIDs not returned by LDAP are omitted.
+func (s *Service) fetchBulkUserLDAPData(ctx context.Context, uids []string) (types.QueryMembers, error) {
+	if len(uids) == 0 {
+		return nil, nil
+	}
+	log := logger.Logger(ctx)
+
+	bulkData, err := s.Client.GetBulkUserLDAPData(ctx, uids)
+	if err != nil {
+		log.WithError(err).Error("failed to bulk-fetch manager details")
+		return nil, err
+	}
+
+	out := make(types.QueryMembers, 0, len(bulkData))
+	for _, uid := range uids {
+		userData, ok := bulkData[uid]
+		if !ok {
+			continue
+		}
+		mgr, _ := userData["manager"].(string)
+		out = append(out, types.QueryMember{UID: uid, Manager: mgr})
+	}
+	return out, nil
 }
 
 func queryResultOptions(query *v1alpha1.LDAPQuery) v1alpha1.LDAPQueryResultOptions {

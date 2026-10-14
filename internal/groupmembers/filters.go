@@ -145,15 +145,17 @@ func queryHasManagerFilter(query *v1alpha1.LDAPQuery) bool {
 
 // extractManagersInfoFromQuery returns manager UIDs from manager filters that
 // should be added to the member set when include_manager is set on the filter or via
-// root options fallback.
+// root options fallback. A filter manager is included only when at least one member
+// in the resolved set reports to them (Manager DN / UID).
 func extractManagersInfoFromQuery(query *v1alpha1.LDAPQuery) types.QueryMembers {
 	if query == nil {
 		return types.QueryMembers{}
 	}
 	seen := make(map[string]struct{})
-	result := types.QueryMembers{}
-	collectManagerUIDsFromFilters(query.Filters, query.Options, seen, &result)
-	return result
+	managersInQuery := types.QueryMembers{}
+	collectManagerUIDsFromFilters(query.Filters, query.Options, seen, &managersInQuery)
+
+	return managersInQuery
 }
 
 func collectManagerUIDsFromFilters(

@@ -591,8 +591,9 @@ func TestQueryHasOnlyManagers(t *testing.T) {
 }
 
 type orgLDAPStub struct {
-	reports  map[string][]string
-	managers map[string]string
+	reports        map[string][]string
+	managers       map[string]string
+	bulkMissingUID map[string]struct{} // UIDs omitted from GetBulkUserLDAPData
 }
 
 func (s *orgLDAPStub) BuildLDAPQueryString(_ context.Context, query *usernautdevv1alpha1.LDAPQuery) (string, error) {
@@ -612,6 +613,21 @@ func (s *orgLDAPStub) GetQueryMembers(_ context.Context, query string, _ []strin
 			qm.Manager = mgr
 		}
 		result = append(result, qm)
+	}
+	return result, nil
+}
+
+func (s *orgLDAPStub) GetBulkUserLDAPData(_ context.Context, userIDs []string) (map[string]map[string]interface{}, error) {
+	result := make(map[string]map[string]interface{}, len(userIDs))
+	for _, uid := range userIDs {
+		if _, skip := s.bulkMissingUID[uid]; skip {
+			continue
+		}
+		userData := map[string]interface{}{"uid": uid}
+		if mgr, ok := s.managers[uid]; ok {
+			userData["manager"] = mgr
+		}
+		result[uid] = userData
 	}
 	return result, nil
 }
@@ -802,4 +818,23 @@ func TestMembers_IncludeManagersOfMembers(t *testing.T) {
 	got, err := service.Members(context.Background(), query)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, []string{"alice", "bob", "pbhattac", "otherboss"}, got)
+}
+
+func TestFetchBulkUserLDAPData_DropsUsersAbsentFromBulk(t *testing.T) {
+	t.Parallel()
+
+	service := New(&orgLDAPStub{
+		managers: map[string]string{
+			"alice": "uid=pbhattac,ou=users,dc=redhat,dc=com",
+		},
+		bulkMissingUID: map[string]struct{}{
+			"ghost": {},
+		},
+	})
+
+	got, err := service.fetchBulkUserLDAPData(context.Background(), []string{"alice", "ghost"})
+	require.NoError(t, err)
+	assert.Equal(t, types.QueryMembers{
+		{UID: "alice", Manager: "uid=pbhattac,ou=users,dc=redhat,dc=com"},
+	}, got)
 }
