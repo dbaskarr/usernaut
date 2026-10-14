@@ -8,10 +8,16 @@ import (
 
 	"github.com/go-ldap/ldap/v3"
 	v1alpha1 "github.com/redhat-data-and-ai/usernaut/api/v1alpha1"
+	"github.com/redhat-data-and-ai/usernaut/pkg/clients/ldap/types"
 	"github.com/redhat-data-and-ai/usernaut/pkg/logger"
 )
 
-func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string) ([]string, error) {
+var defaultAttributes = []string{"uid"}
+
+// GetQueryMembers searches LDAP with the given filter and returns QueryMember DTOs.
+// attributes defaults to []string{"uid"} when empty. Pass additional attrs (e.g. "manager")
+// when callers need them.
+func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string, attributes []string) (types.QueryMembers, error) {
 	// Do not call LDAP if the request context is already cancelled or its deadline has passed
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -22,14 +28,18 @@ func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string) ([]string,
 	// Empty query means "no query-based members".
 	if query == "" {
 		log.Info("empty query provided; returning no query members")
-		return []string{}, nil
+		return types.QueryMembers{}, nil
+	}
+
+	if len(attributes) == 0 {
+		attributes = defaultAttributes
 	}
 
 	searchRequest := ldap.NewSearchRequest(
 		l.baseUserDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 		query,
-		[]string{"uid"},
+		attributes,
 		nil,
 	)
 
@@ -46,23 +56,36 @@ func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string) ([]string,
 	log.WithField("entries", len(resp.Entries)).Info("LDAP search results")
 	if len(resp.Entries) == 0 {
 		log.Info("no LDAP entries found for query; returning empty member list")
-		return []string{}, nil
+		return types.QueryMembers{}, nil
 	}
-	queryMembers := make([]string, 0, len(resp.Entries))
+
+	members := make(types.QueryMembers, 0, len(resp.Entries))
 	for _, entry := range resp.Entries {
-		uid := entry.GetAttributeValue("uid")
+		uid := uidFromEntry(entry)
 		if uid == "" {
-			// Fallback: parse uid from DN if attribute is not returned for some reason.
-			if dn, parseErr := ldap.ParseDN(entry.DN); parseErr == nil {
-				uid = parseUIDFromDN(dn)
-			}
+			continue
 		}
-		if uid != "" {
-			queryMembers = append(queryMembers, uid)
-		}
+		members = append(members, types.QueryMember{
+			UID:     uid,
+			Manager: entry.GetAttributeValue("manager"),
+		})
 	}
 	log.Info("fetched query members")
-	return queryMembers, nil
+	return members, nil
+}
+
+func uidFromEntry(entry *ldap.Entry) string {
+	if entry == nil {
+		return ""
+	}
+	uid := entry.GetAttributeValue("uid")
+	if uid != "" {
+		return uid
+	}
+	if dn, parseErr := ldap.ParseDN(entry.DN); parseErr == nil {
+		return parseUIDFromDN(dn)
+	}
+	return ""
 }
 
 func parseUIDFromDN(dn *ldap.DN) string {

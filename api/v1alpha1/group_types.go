@@ -40,7 +40,8 @@ type Backend struct {
 }
 
 // LDAPFilter is a single LDAP filter item. Options may be set only when key is manager.
-// Nested ldap_query is schemaless, so CEL cannot check it; the query builder rejects options on nested items.
+// Nested ldap_query is schemaless, so CEL cannot check it; reconcile-time validation
+// rejects invalid options on nested items.
 //
 // +kubebuilder:validation:XValidation:rule="!has(self.options) || (has(self.key) && self.key == 'manager')",message="options is only allowed when key is manager"
 type LDAPFilter struct {
@@ -62,11 +63,13 @@ type LDAPFilter struct {
 }
 
 type LDAPQuery struct {
-	// Options are query-level defaults. include_manager, include_only_managers, and
-	// include_indirect_reports apply to manager filters that omit options.
-	// include_only_managers_of_members is query-level only.
+	// Options: deprecated search fallbacks (include_indirect_reports / include_manager)
+	// for root-level manager filters that omit filter options.
 	// +optional
 	Options *LDAPQueryOptions `json:"options,omitempty"`
+	// ResultOptions transforms the resolved member set after search/expansion.
+	// +optional
+	ResultOptions *LDAPQueryResultOptions `json:"result_options,omitempty"`
 	// +kubebuilder:validation:Enum=and;or
 	Operator string `json:"operator"`
 	// +kubebuilder:validation:MinItems=1
@@ -80,34 +83,36 @@ type LDAPNestedQuery struct {
 	Filters []LDAPFilter `json:"filters"`
 }
 
-// LDAPQueryOptions are root ldap_query options.
-//
-// +kubebuilder:validation:XValidation:rule="!has(self.include_only_managers) || self.include_indirect_reports",message="include_only_managers is only allowed when include_indirect_reports is true"
+// LDAPQueryOptions are deprecated root ldap_query search fallbacks (main-compatible).
+// Prefer filter-level options for new CRs. Not inherited into nested ldap_query filters.
 type LDAPQueryOptions struct {
-	// IncludeIndirectReports includes people in the org tree who are reportees of managers
-	// recursively.
+	// IncludeIndirectReports falls back onto root-level manager filters that omit
+	// options, expanding reportees recursively. Not inherited into nested filters.
+	// TODO: Remove this once the old CR's are fully migrated.
 	IncludeIndirectReports bool `json:"include_indirect_reports,omitempty"`
-	// IncludeManager keeps people in the org tree who are managers along with their reportees.
+	// IncludeManager falls back onto root-level manager filters that omit options,
+	// adding those filter manager UIDs to the result. Not inherited into nested filters.
 	IncludeManager bool `json:"include_manager,omitempty"`
-	// IncludeOnlyManagers keeps people in the org tree who are managers.
+}
+
+// LDAPQueryResultOptions are applied to the member set after the query (and optional IR) completes.
+type LDAPQueryResultOptions struct {
+	// IncludeOnlyManagers replaces the resolved member set with people who have reports
+	// (managers found during indirect-reports expansion or manager probes).
 	IncludeOnlyManagers bool `json:"include_only_managers,omitempty"`
-	// IncludeOnlyManagersOfMembers adds each resolved member's manager (from LDAP).
-	// +optional
+	// IncludeOnlyManagersOfMembers replaces the resolved member set with each member's
+	// manager (from LDAP).
 	IncludeOnlyManagersOfMembers bool `json:"include_only_managers_of_members,omitempty"`
+	// IncludeManagersOfMembers appends each member's manager (from LDAP) to the resolved set.
+	IncludeManagersOfMembers bool `json:"include_managers_of_members,omitempty"`
 }
 
 // LDAPFilterOptions applies to a manager filter. Missing or false fields are treated as disabled.
-// When a manager filter omits options, include_indirect_reports, include_manager, and
-// include_only_managers fall back to the enclosing ldap_query.options values.
-//
-// +kubebuilder:validation:XValidation:rule="!has(self.include_only_managers) || self.include_indirect_reports",message="include_only_managers is only allowed when include_indirect_reports is true"
+// When a root-level manager filter omits options, include_indirect_reports and
+// include_manager fall back from ldap_query.options.
 type LDAPFilterOptions struct {
 	IncludeIndirectReports bool `json:"include_indirect_reports,omitempty"`
 	IncludeManager         bool `json:"include_manager,omitempty"`
-	// IncludeOnlyManagers keeps people in the org tree who have reports (managers),
-	// dropping individual contributors. Valid only when include_indirect_reports is true.
-	// +optional
-	IncludeOnlyManagers bool `json:"include_only_managers,omitempty"`
 }
 
 // GroupSpec defines the desired state of Group

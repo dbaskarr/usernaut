@@ -96,7 +96,8 @@ spec:
                         items:
                           description: |-
                             LDAPFilter is a single LDAP filter item. Options may be set only when key is manager.
-                            Nested ldap_query is schemaless, so CEL cannot check it; the query builder rejects options on nested items.
+                            Nested ldap_query is schemaless, so CEL cannot check it; reconcile-time validation
+                            rejects invalid options on nested items.
                           properties:
                             criteria:
                               enum:
@@ -131,16 +132,7 @@ spec:
                                   type: boolean
                                 include_manager:
                                   type: boolean
-                                include_only_managers:
-                                  description: |-
-                                    IncludeOnlyManagers keeps people in the org tree who have reports (managers),
-                                    dropping individual contributors. Valid only when include_indirect_reports is true.
-                                  type: boolean
                               type: object
-                              x-kubernetes-validations:
-                              - message: include_only_managers is only allowed when
-                                  include_indirect_reports is true
-                                rule: '!has(self.include_only_managers) || self.include_indirect_reports'
                             value:
                               type: string
                           type: object
@@ -157,32 +149,39 @@ spec:
                         type: string
                       options:
                         description: |-
-                          Options are query-level defaults. include_manager, include_only_managers, and
-                          include_indirect_reports apply to manager filters that omit options.
-                          include_only_managers_of_members is query-level only.
+                          Options: deprecated search fallbacks (include_indirect_reports / include_manager)
+                          for root-level manager filters that omit filter options.
                         properties:
                           include_indirect_reports:
                             description: |-
-                              IncludeIndirectReports includes people in the org tree who are reportees of managers
-                              recursively.
+                              IncludeIndirectReports falls back onto root-level manager filters that omit
+                              options, expanding reportees recursively. Not inherited into nested filters.
                             type: boolean
                           include_manager:
-                            description: IncludeManager keeps people in the org tree
-                              who are managers along with their reportees.
-                            type: boolean
-                          include_only_managers:
-                            description: IncludeOnlyManagers keeps people in the org
-                              tree who are managers.
-                            type: boolean
-                          include_only_managers_of_members:
-                            description: IncludeOnlyManagersOfMembers adds each resolved
-                              member's manager (from LDAP).
+                            description: |-
+                              IncludeManager falls back onto root-level manager filters that omit options,
+                              adding those filter manager UIDs to the result. Not inherited into nested filters.
                             type: boolean
                         type: object
-                        x-kubernetes-validations:
-                        - message: include_only_managers is only allowed when include_indirect_reports
-                            is true
-                          rule: '!has(self.include_only_managers) || self.include_indirect_reports'
+                      result_options:
+                        description: ResultOptions transforms the resolved member
+                          set after search/expansion.
+                        properties:
+                          include_managers_of_members:
+                            description: IncludeManagersOfMembers appends each member's
+                              manager (from LDAP) to the resolved set.
+                            type: boolean
+                          include_only_managers:
+                            description: |-
+                              IncludeOnlyManagers replaces the resolved member set with people who have reports
+                              (managers found during indirect-reports expansion or manager probes).
+                            type: boolean
+                          include_only_managers_of_members:
+                            description: |-
+                              IncludeOnlyManagersOfMembers replaces the resolved member set with each member's
+                              manager (from LDAP).
+                            type: boolean
+                        type: object
                     required:
                     - filters
                     - operator

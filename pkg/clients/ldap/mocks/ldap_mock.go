@@ -11,6 +11,7 @@ import (
 	ldap "github.com/go-ldap/ldap/v3"
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/redhat-data-and-ai/usernaut/api/v1alpha1"
+	types "github.com/redhat-data-and-ai/usernaut/pkg/clients/ldap/types"
 )
 
 // MockLDAPConnClient is a mock of LDAPConnClient interface.
@@ -147,18 +148,18 @@ func (mr *MockLDAPClientMockRecorder) GetBulkUserLDAPData(ctx, userIDs interface
 }
 
 // GetQueryMembers mocks base method.
-func (m *MockLDAPClient) GetQueryMembers(ctx context.Context, query string) ([]string, error) {
+func (m *MockLDAPClient) GetQueryMembers(ctx context.Context, query string, attributes []string) (types.QueryMembers, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetQueryMembers", ctx, query)
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "GetQueryMembers", ctx, query, attributes)
+	ret0, _ := ret[0].(types.QueryMembers)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetQueryMembers indicates an expected call of GetQueryMembers.
-func (mr *MockLDAPClientMockRecorder) GetQueryMembers(ctx, query interface{}) *gomock.Call {
+func (mr *MockLDAPClientMockRecorder) GetQueryMembers(ctx, query, attributes interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQueryMembers", reflect.TypeOf((*MockLDAPClient)(nil).GetQueryMembers), ctx, query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQueryMembers", reflect.TypeOf((*MockLDAPClient)(nil).GetQueryMembers), ctx, query, attributes)
 }
 
 // GetUserLDAPData mocks base method.

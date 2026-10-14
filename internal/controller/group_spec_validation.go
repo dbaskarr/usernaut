@@ -112,14 +112,10 @@ func validateLDAPFilter(filter usernautv1alpha1.LDAPFilter, path string, depth i
 		return fmt.Errorf("%s: filter item must have key/criteria/value or ldap_query", path)
 	}
 
-	if filter.Options != nil && !strings.EqualFold(strings.TrimSpace(filter.Key), "manager") {
-		return fmt.Errorf("%s: options is only allowed when key is manager", path)
-	}
-	if filter.Options != nil && filter.Options.IncludeOnlyManagers && !filter.Options.IncludeIndirectReports {
-		return fmt.Errorf("%s: include_only_managers is only allowed when include_indirect_reports is true", path)
-	}
-
 	if hasNested {
+		if filter.Options != nil {
+			return fmt.Errorf("%s: options is only allowed when key is manager", path)
+		}
 		return validateLDAPNestedQuery(filter.LDAPQuery, path+".ldap_query", depth+1)
 	}
 
@@ -134,6 +130,10 @@ func validateLDAPFilter(filter usernautv1alpha1.LDAPFilter, path string, depth i
 	criteria := strings.ToLower(strings.TrimSpace(filter.Criteria))
 	if !slices.Contains(ldapFilterCriteria, criteria) {
 		return fmt.Errorf("%s: unsupported filter criteria %q", path, filter.Criteria)
+	}
+
+	if filter.Options != nil && !strings.EqualFold(key, "manager") {
+		return fmt.Errorf("%s: options is only allowed when key is manager", path)
 	}
 
 	if strings.TrimSpace(filter.Value) == "" {

@@ -187,43 +187,6 @@ var _ = Describe("Group spec validation", func() {
 			Expect(validateRootLDAPQueryForTest(query)).NotTo(HaveOccurred())
 		})
 
-		It("allows include_only_managers with include_indirect_reports", func() {
-			query := &usernautv1alpha1.LDAPQuery{
-				Operator: "and",
-				Filters: []usernautv1alpha1.LDAPFilter{
-					{
-						Key:      "manager",
-						Criteria: "equals",
-						Value:    "pbhattac",
-						Options: &usernautv1alpha1.LDAPFilterOptions{
-							IncludeIndirectReports: true,
-							IncludeOnlyManagers:    true,
-						},
-					},
-				},
-			}
-			Expect(validateRootLDAPQueryForTest(query)).NotTo(HaveOccurred())
-		})
-
-		It("rejects include_only_managers without include_indirect_reports", func() {
-			query := &usernautv1alpha1.LDAPQuery{
-				Operator: "and",
-				Filters: []usernautv1alpha1.LDAPFilter{
-					{
-						Key:      "manager",
-						Criteria: "equals",
-						Value:    "pbhattac",
-						Options: &usernautv1alpha1.LDAPFilterOptions{
-							IncludeOnlyManagers: true,
-						},
-					},
-				},
-			}
-			err := validateRootLDAPQueryForTest(query)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("include_only_managers is only allowed when include_indirect_reports is true"))
-		})
-
 		It("rejects options on a non-manager filter", func() {
 			query := &usernautv1alpha1.LDAPQuery{
 				Operator: "and",
@@ -240,6 +203,21 @@ var _ = Describe("Group spec validation", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("spec.members.ldap_query.filters[0]"))
 			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager"))
+		})
+
+		It("allows options on manager filter with non-equals criteria", func() {
+			query := &usernautv1alpha1.LDAPQuery{
+				Operator: "and",
+				Filters: []usernautv1alpha1.LDAPFilter{
+					{
+						Key:      "manager",
+						Criteria: "contains",
+						Value:    "pbhattac",
+						Options:  &usernautv1alpha1.LDAPFilterOptions{IncludeIndirectReports: true},
+					},
+				},
+			}
+			Expect(validateRootLDAPQueryForTest(query)).To(Succeed())
 		})
 
 		It("rejects options on a nested ldap_query wrapper", func() {
