@@ -22,7 +22,7 @@ func replaceManagerInFilters(
 	seenManagers := make(map[string]struct{})
 	for _, filter := range filters {
 		if filter.LDAPQuery != nil {
-			// Root FilterOptions fallbacks do not apply inside nested ldap_query.
+			// Root options fallbacks do not apply inside nested ldap_query.
 			nested := replaceManagerInNestedQuery(filter.LDAPQuery, managerUID, nil)
 			result = append(result, v1alpha1.LDAPFilter{
 				LDAPQuery: nested,
@@ -111,6 +111,13 @@ func queryHasOnlyManagers(query *v1alpha1.LDAPQuery) bool {
 	return query != nil && query.ResultOptions != nil && query.ResultOptions.IncludeOnlyManagers
 }
 
+func queryResultOptions(query *v1alpha1.LDAPQuery) v1alpha1.LDAPQueryResultOptions {
+	if query == nil || query.ResultOptions == nil {
+		return v1alpha1.LDAPQueryResultOptions{}
+	}
+	return *query.ResultOptions
+}
+
 func filtersHaveIndirectReports(filters []v1alpha1.LDAPFilter, inherited *v1alpha1.LDAPQueryOptions) bool {
 	for _, filter := range filters {
 		if managerFilterHasIndirectReports(filter, inherited) {
@@ -143,22 +150,19 @@ func queryHasManagerFilter(query *v1alpha1.LDAPQuery) bool {
 	return filtersHaveManager(query.Filters)
 }
 
-// extractManagersInfoFromQuery returns manager UIDs from manager filters that
-// should be added to the member set when include_manager is set on the filter or via
-// root options fallback. A filter manager is included only when at least one member
-// in the resolved set reports to them (Manager DN / UID).
+// includeManagerUIDsFromQuery returns UIDs from manager filters with include_manager
+// (filter options or root options fallback). Nested filters do not inherit root options.
 func extractManagersInfoFromQuery(query *v1alpha1.LDAPQuery) types.QueryMembers {
 	if query == nil {
-		return types.QueryMembers{}
+		return nil
 	}
 	seen := make(map[string]struct{})
-	managersInQuery := types.QueryMembers{}
-	collectManagerUIDsFromFilters(query.Filters, query.Options, seen, &managersInQuery)
-
-	return managersInQuery
+	var out types.QueryMembers
+	extractManagersInfoFromFilters(query.Filters, query.Options, seen, &out)
+	return out
 }
 
-func collectManagerUIDsFromFilters(
+func extractManagersInfoFromFilters(
 	filters []v1alpha1.LDAPFilter,
 	inherited *v1alpha1.LDAPQueryOptions,
 	seen map[string]struct{},
@@ -166,7 +170,7 @@ func collectManagerUIDsFromFilters(
 ) {
 	for _, filter := range filters {
 		if filter.LDAPQuery != nil {
-			collectManagerUIDsFromFilters(filter.LDAPQuery.Filters, nil, seen, result)
+			extractManagersInfoFromFilters(filter.LDAPQuery.Filters, nil, seen, result)
 			continue
 		}
 		if !managerFilterHasIncludeManagers(filter, inherited) {
@@ -180,8 +184,6 @@ func collectManagerUIDsFromFilters(
 			continue
 		}
 		seen[uid] = struct{}{}
-		*result = append(*result, types.QueryMember{
-			UID: uid,
-		})
+		*result = append(*result, types.QueryMember{UID: uid})
 	}
 }

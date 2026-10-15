@@ -405,7 +405,7 @@ func TestQueryHasIndirectReports(t *testing.T) {
 	}
 }
 
-func TestExtractManagerUIDsFromQuery(t *testing.T) {
+func TestIncludeManagerUIDsFromQuery(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -820,7 +820,7 @@ func TestMembers_IncludeManagersOfMembers(t *testing.T) {
 	assert.ElementsMatch(t, []string{"alice", "bob", "pbhattac", "otherboss"}, got)
 }
 
-func TestFetchBulkUserLDAPData_DropsUsersAbsentFromBulk(t *testing.T) {
+func TestFetchUsersByUID_DropsUsersAbsentFromBulk(t *testing.T) {
 	t.Parallel()
 
 	service := New(&orgLDAPStub{
@@ -832,7 +832,7 @@ func TestFetchBulkUserLDAPData_DropsUsersAbsentFromBulk(t *testing.T) {
 		},
 	})
 
-	got, err := service.fetchBulkUserLDAPData(context.Background(), []string{"alice", "ghost"})
+	got, err := service.fetchUsersByUID(context.Background(), []string{"alice", "ghost"})
 	require.NoError(t, err)
 	assert.Equal(t, types.QueryMembers{
 		{UID: "alice", Manager: "uid=pbhattac,ou=users,dc=redhat,dc=com"},

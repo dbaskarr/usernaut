@@ -12,18 +12,18 @@ spec:
     ldap_query:
       options:  # deprecated search fallbacks (main-compatible)
         include_indirect_reports: false
-        include_manager: true
+        include_manager: false
       result_options:
         include_only_managers: true
         include_managers_of_members: true
-        include_only_managers_of_members: false
+        include_only_managers_of_members: true
       operator: and
       filters:  # key: LDAP attribute (e.g. manager, title, givenName, employeeType, rhatGeo, co, st). See DEVELOPMENT.md for full list.
         - key: manager
           criteria: equals
           value: pbhattac  # user ID only (expanded to uid=pbhattac,<baseUserDN>)
           options:
-            include_manager: true
+            include_manager: false
             include_indirect_reports: false
     users: []
   backends:
