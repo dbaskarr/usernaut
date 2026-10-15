@@ -56,8 +56,7 @@ func validateLDAPQuery(query *usernautv1alpha1.LDAPQuery) error {
 	if query == nil {
 		return nil
 	}
-	path := "spec.members.ldap_query"
-	return validateLDAPQueryTree(query.Operator, query.Filters, path, 1)
+	return validateLDAPQueryTree(query.Operator, query.Filters, "spec.members.ldap_query", 1)
 }
 
 func isManagerEqualsFilter(filter usernautv1alpha1.LDAPFilter) bool {
