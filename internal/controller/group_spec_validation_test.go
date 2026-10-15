@@ -192,10 +192,10 @@ var _ = Describe("Group spec validation", func() {
 			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("spec.members.ldap_query.filters[0]"))
-			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager"))
+			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager and criteria is equals"))
 		})
 
-		It("allows options on manager filter with non-equals criteria", func() {
+		It("rejects options on manager filter with non-equals criteria", func() {
 			query := &usernautv1alpha1.LDAPQuery{
 				Operator: "and",
 				Filters: []usernautv1alpha1.LDAPFilter{
@@ -207,7 +207,20 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			Expect(validateLDAPQuery(query)).To(Succeed())
+			err := validateLDAPQuery(query)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager and criteria is equals"))
+		})
+
+		It("allows root options when a manager equals filter is present", func() {
+			query := &usernautv1alpha1.LDAPQuery{
+				Operator: "and",
+				Options:  &usernautv1alpha1.LDAPQueryOptions{IncludeManager: true},
+				Filters: []usernautv1alpha1.LDAPFilter{
+					{Key: "manager", Criteria: "equals", Value: "pbhattac"},
+				},
+			}
+			Expect(validateLDAPQuery(query)).NotTo(HaveOccurred())
 		})
 
 		It("rejects options on a nested ldap_query wrapper", func() {
@@ -235,7 +248,7 @@ var _ = Describe("Group spec validation", func() {
 			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("spec.members.ldap_query.filters[0].ldap_query.filters[0]"))
-			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager"))
+			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager and criteria is equals"))
 		})
 
 		It("allows nested manager options", func() {

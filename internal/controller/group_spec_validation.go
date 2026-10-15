@@ -56,7 +56,13 @@ func validateLDAPQuery(query *usernautv1alpha1.LDAPQuery) error {
 	if query == nil {
 		return nil
 	}
-	return validateLDAPQueryTree(query.Operator, query.Filters, "spec.members.ldap_query", 1)
+	path := "spec.members.ldap_query"
+	return validateLDAPQueryTree(query.Operator, query.Filters, path, 1)
+}
+
+func isManagerEqualsFilter(filter usernautv1alpha1.LDAPFilter) bool {
+	return strings.EqualFold(strings.TrimSpace(filter.Key), "manager") &&
+		strings.EqualFold(strings.TrimSpace(filter.Criteria), "equals")
 }
 
 func validateBackends(group *usernautv1alpha1.Group, rule config.BackendsValidationConfig) error {
@@ -131,7 +137,7 @@ func validateLDAPFilter(filter usernautv1alpha1.LDAPFilter, path string, depth i
 
 	if hasNested {
 		if filter.Options != nil {
-			return fmt.Errorf("%s: options is only allowed when key is manager", path)
+			return fmt.Errorf("%s: options is only allowed when key is manager and criteria is equals", path)
 		}
 		return validateLDAPNestedQuery(filter.LDAPQuery, path+".ldap_query", depth+1)
 	}
@@ -149,8 +155,8 @@ func validateLDAPFilter(filter usernautv1alpha1.LDAPFilter, path string, depth i
 		return fmt.Errorf("%s: unsupported filter criteria %q", path, filter.Criteria)
 	}
 
-	if filter.Options != nil && !strings.EqualFold(key, "manager") {
-		return fmt.Errorf("%s: options is only allowed when key is manager", path)
+	if filter.Options != nil && !isManagerEqualsFilter(filter) {
+		return fmt.Errorf("%s: options is only allowed when key is manager and criteria is equals", path)
 	}
 
 	if strings.TrimSpace(filter.Value) == "" {

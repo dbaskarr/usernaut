@@ -39,9 +39,11 @@ type Backend struct {
 	Type string `json:"type"`
 }
 
-// LDAPFilter is a single LDAP filter item. Options may be set only when key is manager.
-// Nested ldap_query is schemaless, so CEL cannot check it; reconcile-time validation
-// rejects invalid options on nested items.
+// LDAPFilter is a single LDAP filter item. Options may be set only when key is manager
+// and criteria is equals. Nested ldap_query is schemaless, so CEL cannot fully check it;
+// reconcile-time validation enforces manager+equals (including nested items).
+// CEL is limited to key==manager to stay within CRD rule-cost budget; criteria==equals
+// is enforced at reconcile.
 //
 // +kubebuilder:validation:XValidation:rule="!has(self.options) || (has(self.key) && self.key == 'manager')",message="options is only allowed when key is manager"
 type LDAPFilter struct {
@@ -53,7 +55,7 @@ type LDAPFilter struct {
 	Criteria string `json:"criteria,omitempty"`
 	// +optional
 	Value string `json:"value,omitempty"`
-	// Options is only valid when key is manager.
+	// Options is only valid when key is manager and criteria is equals.
 	// +optional
 	Options *LDAPFilterOptions `json:"options,omitempty"`
 	// +optional
@@ -62,6 +64,10 @@ type LDAPFilter struct {
 	LDAPQuery *LDAPNestedQuery `json:"ldap_query,omitempty"`
 }
 
+// LDAPQuery is the root membership query. Root options are deprecated and only
+// valid when at least one root filter is manager equals (fallback target).
+//
+// +kubebuilder:validation:XValidation:rule="!has(self.options) || self.filters.exists(f, has(f.key) && f.key == 'manager' && has(f.criteria) && f.criteria == 'equals')",message="options requires at least one filter with key manager and criteria equals"
 type LDAPQuery struct {
 	// Options: deprecated search fallbacks (include_indirect_reports / include_manager)
 	// for root-level manager filters that omit filter options.
@@ -73,6 +79,7 @@ type LDAPQuery struct {
 	// +kubebuilder:validation:Enum=and;or
 	Operator string `json:"operator"`
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=32
 	Filters []LDAPFilter `json:"filters"`
 }
 

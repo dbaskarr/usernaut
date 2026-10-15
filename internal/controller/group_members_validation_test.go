@@ -191,4 +191,23 @@ var _ = Describe("Group spec.members validation", func() {
 		Expect(apierrors.IsInvalid(err)).To(BeTrue(), "expected invalid Group (CEL/options): %v", err)
 		Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager"))
 	})
+
+	It("rejects root ldap_query options without a manager equals filter", func() {
+		name := "group-members-reject-root-options"
+		g := newGroup(name, usernautdevv1alpha1.Members{
+			LDAPQuery: &usernautdevv1alpha1.LDAPQuery{
+				Operator: "and",
+				Options: &usernautdevv1alpha1.LDAPQueryOptions{
+					IncludeManager: true,
+				},
+				Filters: []usernautdevv1alpha1.LDAPFilter{
+					{Key: "title", Criteria: "contains", Value: "engineer"},
+				},
+			},
+		})
+		err := k8sClient.Create(ctx, g)
+		Expect(err).To(HaveOccurred())
+		Expect(apierrors.IsInvalid(err)).To(BeTrue(), "expected invalid Group (CEL/root options): %v", err)
+		Expect(err.Error()).To(ContainSubstring("options requires at least one filter with key manager and criteria equals"))
+	})
 })
