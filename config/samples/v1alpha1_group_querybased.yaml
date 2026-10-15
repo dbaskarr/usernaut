@@ -4,26 +4,27 @@ metadata:
   labels:
     app.kubernetes.io/name: usernaut
     app.kubernetes.io/managed-by: kustomize
-  name: dataverse-aggregate-mygroupquerybased
+  name: dataverse-aggregate-group
   namespace: usernaut
 spec:
-  group_name: dataverse-aggregate-mygroupquerybased
+  group_name: dataverse-aggregate-group
   members:
     ldap_query:
       options:  # deprecated search fallbacks (main-compatible)
         include_indirect_reports: false
-        include_manager: false
-      result_options:  # post-search member-set transforms
+        include_manager: true
+      result_options:
         include_only_managers: true
-        include_only_managers_of_members: true
         include_managers_of_members: true
+        include_only_managers_of_members: false
       operator: and
       filters:  # key: LDAP attribute (e.g. manager, title, givenName, employeeType, rhatGeo, co, st). See DEVELOPMENT.md for full list.
         - key: manager
           criteria: equals
           value: pbhattac  # user ID only (expanded to uid=pbhattac,<baseUserDN>)
           options:
-            include_indirect_reports: true
+            include_manager: true
+            include_indirect_reports: false
     users: []
   backends:
   - name: rover

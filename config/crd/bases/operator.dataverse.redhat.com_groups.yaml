@@ -91,13 +91,18 @@ spec:
                       type: string
                     type: array
                   ldap_query:
+                    description: |-
+                      LDAPQuery is the root membership query. Root options are deprecated and only
+                      valid when at least one root filter is manager equals (fallback target).
                     properties:
                       filters:
                         items:
                           description: |-
-                            LDAPFilter is a single LDAP filter item. Options may be set only when key is manager.
-                            Nested ldap_query is schemaless, so CEL cannot check it; reconcile-time validation
-                            rejects invalid options on nested items.
+                            LDAPFilter is a single LDAP filter item. Options may be set only when key is manager
+                            and criteria is equals. Nested ldap_query is schemaless, so CEL cannot fully check it;
+                            reconcile-time validation enforces manager+equals (including nested items).
+                            CEL is limited to key==manager to stay within CRD rule-cost budget; criteria==equals
+                            is enforced at reconcile.
                           properties:
                             criteria:
                               enum:
@@ -126,7 +131,8 @@ spec:
                             ldap_query:
                               x-kubernetes-preserve-unknown-fields: true
                             options:
-                              description: Options is only valid when key is manager.
+                              description: Options is only valid when key is manager
+                                and criteria is equals.
                               properties:
                                 include_indirect_reports:
                                   type: boolean
@@ -140,6 +146,7 @@ spec:
                           - message: options is only allowed when key is manager
                             rule: '!has(self.options) || (has(self.key) && self.key
                               == ''manager'')'
+                        maxItems: 32
                         minItems: 1
                         type: array
                       operator:
@@ -186,6 +193,12 @@ spec:
                     - filters
                     - operator
                     type: object
+                    x-kubernetes-validations:
+                    - message: options requires at least one filter with key manager
+                        and criteria equals
+                      rule: '!has(self.options) || self.filters.exists(f, has(f.key)
+                        && f.key == ''manager'' && has(f.criteria) && f.criteria ==
+                        ''equals'')'
                   users:
                     items:
                       type: string

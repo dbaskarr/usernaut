@@ -6,8 +6,10 @@ import (
 
 // QueryMember is one LDAP search result used for group membership resolution.
 type QueryMember struct {
-	UID     string
-	Manager string // raw manager DN (or empty)
+	// UID of the query member
+	UID string
+	// raw manager DN (or empty)
+	Manager string
 }
 
 type QueryMembers []QueryMember
@@ -57,46 +59,6 @@ func (q QueryMembers) Managers() QueryMembers {
 		managers = append(managers, QueryMember{UID: mgrUID})
 	}
 	return managers
-}
-
-// MembersWithoutManagerDetail returns members without manager detail.
-func (q QueryMembers) MembersWithoutManagerDetail() QueryMembers {
-	members := make(QueryMembers, 0, len(q))
-	for _, member := range q {
-		if member.Manager == "" {
-			members = append(members, member)
-		}
-	}
-	return members
-}
-
-// FillManagerDetails returns a copy of q with empty Manager fields filled from details
-// (matched by UID). Existing Manager values are left unchanged.
-func (q QueryMembers) FillManagerDetails(details QueryMembers) QueryMembers {
-	if len(q) == 0 || len(details) == 0 {
-		return q
-	}
-	byUID := make(map[string]string, len(details))
-	for _, d := range details {
-		if d.UID == "" || d.Manager == "" {
-			continue
-		}
-		byUID[d.UID] = d.Manager
-	}
-	if len(byUID) == 0 {
-		return q
-	}
-	out := make(QueryMembers, len(q))
-	copy(out, q)
-	for i := range out {
-		if out[i].Manager != "" {
-			continue
-		}
-		if mgr, ok := byUID[out[i].UID]; ok {
-			out[i].Manager = mgr
-		}
-	}
-	return out
 }
 
 func uidFromManagerDN(manager string) string {

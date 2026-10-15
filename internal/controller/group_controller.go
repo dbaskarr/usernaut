@@ -41,7 +41,6 @@ import (
 
 	usernautdevv1alpha1 "github.com/redhat-data-and-ai/usernaut/api/v1alpha1"
 	"github.com/redhat-data-and-ai/usernaut/internal/controller/controllerutils"
-	"github.com/redhat-data-and-ai/usernaut/internal/groupmembers"
 	"github.com/redhat-data-and-ai/usernaut/pkg/clients"
 
 	"github.com/redhat-data-and-ai/usernaut/pkg/clients/fivetran"
@@ -66,6 +65,11 @@ const (
 
 var retryPriority = -200
 
+// QueryMembers resolves an LDAPQuery into member UIDs.
+type QueryMembers interface {
+	Members(ctx context.Context, query *usernautdevv1alpha1.LDAPQuery) ([]string, error)
+}
+
 // GroupReconciler reconciles a Group object
 type GroupReconciler struct {
 	client.Client
@@ -73,6 +77,7 @@ type GroupReconciler struct {
 	AppConfig         *config.AppConfig
 	Store             *store.Store
 	LdapConn          ldap.LDAPClient
+	QueryMembers      QueryMembers
 	WatchedNamespaces []string
 	// CacheMutex prevents concurrent cache index updates during group reconciliation.
 	// This shared mutex ensures that bulk read-modify-write operations on cache indexes
@@ -159,7 +164,7 @@ func (r *GroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	var err error
 	queryMembers := []string{}
 	if groupCR.Spec.Members.LDAPQuery != nil {
-		queryMembers, err = r.fetchQueryMembers(ctx, groupCR.Spec.Members.LDAPQuery)
+		queryMembers, err = r.QueryMembers.Members(ctx, groupCR.Spec.Members.LDAPQuery)
 		if err != nil {
 			log.WithError(err).Error("error fetching query members")
 			return ctrl.Result{Priority: &retryPriority}, err
@@ -250,14 +255,6 @@ func (r *GroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 type LDAPFetchResult struct {
 	CurrentMembers []string // emails of users with valid LDAP data
 	ActiveUserList []string // UIDs of active users
-}
-
-// fetchQueryMembers resolves ldap_query membership via the groupmembers service.
-func (r *GroupReconciler) fetchQueryMembers(
-	ctx context.Context,
-	query *usernautdevv1alpha1.LDAPQuery,
-) ([]string, error) {
-	return groupmembers.New(r.LdapConn).Members(ctx, query)
 }
 
 // fetchLDAPData fetches LDAP data for all unique members and returns the result

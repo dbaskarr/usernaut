@@ -36,34 +36,3 @@ func TestQueryMembers_Dedupe(t *testing.T) {
 	got := members.Dedupe()
 	assert.Equal(t, QueryMembers{{UID: "alice", Manager: "m1"}, {UID: "bob"}}, got)
 }
-
-func TestQueryMembers_MembersWithoutManagerDetail(t *testing.T) {
-	t.Parallel()
-	members := QueryMembers{
-		{UID: "alice", Manager: "uid=pbhattac,ou=users,dc=redhat,dc=com"},
-		{UID: "bob"},
-		{UID: "carol", Manager: ""},
-	}
-	got := members.MembersWithoutManagerDetail()
-	assert.Equal(t, QueryMembers{{UID: "bob"}, {UID: "carol"}}, got)
-}
-
-func TestQueryMembers_FillManagerDetails(t *testing.T) {
-	t.Parallel()
-	members := QueryMembers{
-		{UID: "alice", Manager: "uid=keep,ou=users,dc=redhat,dc=com"},
-		{UID: "bob"},
-		{UID: "carol"},
-	}
-	details := QueryMembers{
-		{UID: "bob", Manager: "uid=pbhattac,ou=users,dc=redhat,dc=com"},
-		{UID: "carol", Manager: ""},
-		{UID: "alice", Manager: "uid=other,ou=users,dc=redhat,dc=com"},
-	}
-	got := members.FillManagerDetails(details)
-	assert.Equal(t, QueryMembers{
-		{UID: "alice", Manager: "uid=keep,ou=users,dc=redhat,dc=com"},
-		{UID: "bob", Manager: "uid=pbhattac,ou=users,dc=redhat,dc=com"},
-		{UID: "carol"},
-	}, got)
-}
