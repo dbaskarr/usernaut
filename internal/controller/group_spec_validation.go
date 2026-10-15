@@ -36,6 +36,10 @@ var (
 )
 
 func validate(namespace string, group *usernautv1alpha1.Group, rules config.SpecValidationRulesConfig) error {
+	if err := validateLDAPQuery(group.Spec.Members.LDAPQuery); err != nil {
+		return err
+	}
+
 	nsRules, ok := rules[namespace]
 	if !ok {
 		return nil
@@ -45,6 +49,14 @@ func validate(namespace string, group *usernautv1alpha1.Group, rules config.Spec
 	}
 
 	return validateBackends(group, nsRules.Group.Backends)
+}
+
+// validateLDAPQuery validates a root ldap_query (operator, filters, nesting).
+func validateLDAPQuery(query *usernautv1alpha1.LDAPQuery) error {
+	if query == nil {
+		return nil
+	}
+	return validateLDAPQueryTree(query.Operator, query.Filters, "spec.members.ldap_query", 1)
 }
 
 func validateBackends(group *usernautv1alpha1.Group, rule config.BackendsValidationConfig) error {
@@ -73,26 +85,31 @@ func validateGroupName(group *usernautv1alpha1.Group, rule config.GroupNameValid
 	return nil
 }
 
-// validateLDAPNestedQuery walks an ldap_query tree. Nested ldap_query items are
+// validateLDAPNestedQuery walks a nested ldap_query tree. Nested ldap_query items are
 // schemaless in the CRD, so this validates operators, filters, and filter items.
 func validateLDAPNestedQuery(query *usernautv1alpha1.LDAPNestedQuery, path string, depth int) error {
 	if query == nil {
 		return nil
 	}
+	return validateLDAPQueryTree(query.Operator, query.Filters, path, depth)
+}
+
+// validateLDAPQueryTree validates operator, non-empty filters, depth, and each filter item.
+func validateLDAPQueryTree(operator string, filters []usernautv1alpha1.LDAPFilter, path string, depth int) error {
 	if depth > usernautv1alpha1.MaxLDAPQueryDepth {
 		return fmt.Errorf("%s: ldap query nesting exceeds maximum depth of %d", path, usernautv1alpha1.MaxLDAPQueryDepth)
 	}
 
-	op := strings.ToLower(strings.TrimSpace(query.Operator))
+	op := strings.ToLower(strings.TrimSpace(operator))
 	if !slices.Contains(ldapQueryOperators, op) {
-		return fmt.Errorf("%s: unsupported operator %q", path, query.Operator)
+		return fmt.Errorf("%s: unsupported operator %q", path, operator)
 	}
 
-	if len(query.Filters) == 0 {
+	if len(filters) == 0 {
 		return fmt.Errorf("%s: filters are empty", path)
 	}
 
-	for i, filter := range query.Filters {
+	for i, filter := range filters {
 		filterPath := fmt.Sprintf("%s.filters[%d]", path, i)
 		if err := validateLDAPFilter(filter, filterPath, depth); err != nil {
 			return err

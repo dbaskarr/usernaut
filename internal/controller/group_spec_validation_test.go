@@ -25,16 +25,6 @@ import (
 	"github.com/redhat-data-and-ai/usernaut/pkg/config"
 )
 
-func validateRootLDAPQueryForTest(query *usernautv1alpha1.LDAPQuery) error {
-	if query == nil {
-		return nil
-	}
-	return validateLDAPNestedQuery(&usernautv1alpha1.LDAPNestedQuery{
-		Operator: query.Operator,
-		Filters:  query.Filters,
-	}, "spec.members.ldap_query", 1)
-}
-
 var _ = Describe("Group spec validation", func() {
 	const (
 		aifNamespace      = "ddis-asteroid--usernaut-aif-rhplatformtest"
@@ -165,9 +155,9 @@ var _ = Describe("Group spec validation", func() {
 		})
 	})
 
-	Describe("validateLDAPNestedQuery", func() {
+	Describe("validateLDAPQuery", func() {
 		It("allows a nil query", func() {
-			Expect(validateRootLDAPQueryForTest(nil)).NotTo(HaveOccurred())
+			Expect(validateLDAPQuery(nil)).NotTo(HaveOccurred())
 		})
 
 		It("allows options on a manager filter", func() {
@@ -184,7 +174,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			Expect(validateRootLDAPQueryForTest(query)).NotTo(HaveOccurred())
+			Expect(validateLDAPQuery(query)).NotTo(HaveOccurred())
 		})
 
 		It("rejects options on a non-manager filter", func() {
@@ -199,7 +189,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			err := validateRootLDAPQueryForTest(query)
+			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("spec.members.ldap_query.filters[0]"))
 			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager"))
@@ -217,7 +207,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			Expect(validateRootLDAPQueryForTest(query)).To(Succeed())
+			Expect(validateLDAPQuery(query)).To(Succeed())
 		})
 
 		It("rejects options on a nested ldap_query wrapper", func() {
@@ -242,7 +232,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			err := validateRootLDAPQueryForTest(query)
+			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("spec.members.ldap_query.filters[0].ldap_query.filters[0]"))
 			Expect(err.Error()).To(ContainSubstring("options is only allowed when key is manager"))
@@ -267,7 +257,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			Expect(validateRootLDAPQueryForTest(query)).NotTo(HaveOccurred())
+			Expect(validateLDAPQuery(query)).NotTo(HaveOccurred())
 		})
 
 		It("rejects an invalid nested operator", func() {
@@ -284,7 +274,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			err := validateRootLDAPQueryForTest(query)
+			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("spec.members.ldap_query.filters[0].ldap_query"))
 			Expect(err.Error()).To(ContainSubstring(`unsupported operator "xor"`))
@@ -302,7 +292,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			err := validateRootLDAPQueryForTest(query)
+			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("filters are empty"))
 		})
@@ -326,7 +316,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			err := validateRootLDAPQueryForTest(query)
+			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("cannot have both key/criteria/value and ldap_query"))
 		})
@@ -345,7 +335,7 @@ var _ = Describe("Group spec validation", func() {
 					},
 				},
 			}
-			err := validateRootLDAPQueryForTest(query)
+			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(`unsupported filter key "mail"`))
 		})
@@ -360,7 +350,7 @@ var _ = Describe("Group spec validation", func() {
 			level1 := &usernautv1alpha1.LDAPNestedQuery{Operator: "or", Filters: []usernautv1alpha1.LDAPFilter{{LDAPQuery: level2}}}
 			query := &usernautv1alpha1.LDAPQuery{Operator: "and", Filters: []usernautv1alpha1.LDAPFilter{{LDAPQuery: level1}}}
 
-			err := validateRootLDAPQueryForTest(query)
+			err := validateLDAPQuery(query)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("exceeds maximum depth"))
 		})
