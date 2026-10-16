@@ -19,12 +19,6 @@ spec:
         include_only_managers_of_result: false
       operator: or
       filters:  # key: LDAP attribute (e.g. manager, title, givenName, employeeType, rhatGeo, co, st). See DEVELOPMENT.md for full list.
-        - key: manager
-          criteria: equals
-          value: foo  # user ID only (expanded to uid=foo,<baseUserDN>)
-          options:
-            include_manager: false
-            include_indirect_reports: false
         - ldap_query:
             operator: or
             filters:
@@ -34,6 +28,12 @@ spec:
                 options:
                   include_manager: false
                   include_indirect_reports: false
+        - key: manager
+          criteria: equals
+          value: foo  # user ID only (expanded to uid=foo,<baseUserDN>)
+          options:
+            include_manager: false
+            include_indirect_reports: false
     users:
       - subhatta
       - arijroy

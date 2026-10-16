@@ -23,7 +23,7 @@ func replaceManagerInFilters(
 	for _, filter := range filters {
 		if filter.LDAPQuery != nil {
 			// Root options fallbacks do not apply inside nested ldap_query.
-			nested := replaceManagerInNestedQuery(filter.LDAPQuery, managerUID, nil)
+			nested := replaceManagerInNestedQuery(filter.LDAPQuery, managerUID)
 			result = append(result, v1alpha1.LDAPFilter{
 				LDAPQuery: nested,
 			})
@@ -50,14 +50,13 @@ func replaceManagerInFilters(
 func replaceManagerInNestedQuery(
 	query *v1alpha1.LDAPNestedQuery,
 	managerUID string,
-	inherited *v1alpha1.LDAPQueryOptions,
 ) *v1alpha1.LDAPNestedQuery {
 	if query == nil {
 		return nil
 	}
 	return &v1alpha1.LDAPNestedQuery{
 		Operator: query.Operator,
-		Filters:  replaceManagerInFilters(query.Filters, managerUID, inherited),
+		Filters:  replaceManagerInFilters(query.Filters, managerUID, nil),
 	}
 }
 
