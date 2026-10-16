@@ -500,10 +500,10 @@ func TestIncludeManagerUIDsFromQuery(t *testing.T) {
 	}
 }
 
-// TestMainBranchRootQueryOptionsCompat ensures main-era ldap_query.options still work:
+// TestBackwardCompatibleRootQueryOptionsCompat ensures legacy ldap_query.options still work:
 // include_indirect_reports / include_manager on root options with a root manager
 // filter that omits filter options.
-func TestMainBranchRootQueryOptionsCompat(t *testing.T) {
+func TestBackwardCompatibleRootQueryOptionsCompat(t *testing.T) {
 	t.Parallel()
 
 	query := &usernautdevv1alpha1.LDAPQuery{

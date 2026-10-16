@@ -10,7 +10,7 @@ spec:
   group_name: dataverse-aggregate-mygroupquerybased
   members:
     ldap_query:
-      options:  # deprecated search fallbacks (main-compatible)
+      options:  # deprecated search fallbacks (backward-compatible)
         include_indirect_reports: false
         include_manager: false
       result_options:

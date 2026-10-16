@@ -88,7 +88,7 @@ type LDAPNestedQuery struct {
 	Filters []LDAPFilter `json:"filters"`
 }
 
-// LDAPQueryOptions are deprecated root ldap_query search fallbacks (main-compatible).
+// LDAPQueryOptions are deprecated root ldap_query search fallbacks (backward-compatible).
 // Prefer filter-level options for new CRs. Not inherited into nested ldap_query filters.
 type LDAPQueryOptions struct {
 	// IncludeIndirectReports falls back onto root-level manager filters that omit
