@@ -174,18 +174,17 @@ spec:
                         description: ResultOptions transforms the resolved member
                           set after search/expansion.
                         properties:
-                          include_managers_of_members:
-                            description: IncludeManagersOfMembers appends each member's
+                          include_managers_of_result:
+                            description: IncludeManagersOfResult appends each member's
                               manager (from LDAP) to the resolved set.
                             type: boolean
                           include_only_managers:
-                            description: |-
-                              IncludeOnlyManagers replaces the resolved member set with people who have reports
-                              (managers found during indirect-reports expansion or manager probes).
+                            description: IncludeOnlyManagers filters the resolved
+                              member set to people who have reports.
                             type: boolean
-                          include_only_managers_of_members:
+                          include_only_managers_of_result:
                             description: |-
-                              IncludeOnlyManagersOfMembers replaces the resolved member set with each member's
+                              IncludeOnlyManagersOfResult replaces the resolved member set with each member's
                               manager (from LDAP).
                             type: boolean
                         type: object

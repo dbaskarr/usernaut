@@ -105,12 +105,6 @@ func queryHasIndirectReports(query *v1alpha1.LDAPQuery) bool {
 	return filtersHaveIndirectReports(query.Filters, query.Options)
 }
 
-// queryHasOnlyManagers reports whether the final member set should be replaced with
-// managers found during report expansion (ldap_query.result_options.include_only_managers).
-func queryHasOnlyManagers(query *v1alpha1.LDAPQuery) bool {
-	return query != nil && query.ResultOptions != nil && query.ResultOptions.IncludeOnlyManagers
-}
-
 func queryResultOptions(query *v1alpha1.LDAPQuery) v1alpha1.LDAPQueryResultOptions {
 	if query == nil || query.ResultOptions == nil {
 		return v1alpha1.LDAPQueryResultOptions{}

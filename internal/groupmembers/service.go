@@ -27,7 +27,7 @@ func (s *Service) Members(ctx context.Context, query *v1alpha1.LDAPQuery) ([]str
 	}
 
 	var managers types.QueryMembers
-	if queryHasIndirectReports(query) || queryHasOnlyManagers(query) {
+	if queryHasIndirectReports(query) || queryResultOptions(query).IncludeOnlyManagers {
 		members, managers, err = s.expandReports(ctx, query, members, queryHasIndirectReports(query))
 		if err != nil {
 			return nil, err
@@ -39,5 +39,5 @@ func (s *Service) Members(ctx context.Context, query *v1alpha1.LDAPQuery) ([]str
 		return nil, err
 	}
 
-	return selectMembers(members, managers, query).Dedupe().UIDs(), nil
+	return applyResultOptions(members, managers, query).Dedupe().UIDs(), nil
 }

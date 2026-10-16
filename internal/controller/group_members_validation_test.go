@@ -131,8 +131,8 @@ var _ = Describe("Group spec.members validation", func() {
 					IncludeManager:         true,
 				},
 				ResultOptions: &usernautdevv1alpha1.LDAPQueryResultOptions{
-					IncludeOnlyManagers:          true,
-					IncludeOnlyManagersOfMembers: true,
+					IncludeOnlyManagers:         true,
+					IncludeOnlyManagersOfResult: true,
 				},
 				Filters: []usernautdevv1alpha1.LDAPFilter{
 					{Key: "manager", Criteria: "equals", Value: "jsmith"},

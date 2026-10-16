@@ -7,8 +7,9 @@ import (
 	"github.com/redhat-data-and-ai/usernaut/pkg/clients/ldap/types"
 )
 
-// enrichWithManagerInfo pulls include_manager UIDs from the query, verifies them
-// via bulk LDAP, and merges those found into the member and manager result sets.
+// addManagersFromQuery pulls include_manager UIDs from the query and merges them
+// into the member and manager result sets. When of-result options are set, UIDs
+// are verified via bulk LDAP first (absent users are dropped).
 func (s *Service) addManagersFromQuery(
 	ctx context.Context,
 	query *v1alpha1.LDAPQuery,
@@ -21,7 +22,7 @@ func (s *Service) addManagersFromQuery(
 
 	resultOptions := queryResultOptions(query)
 
-	if resultOptions.IncludeOnlyManagersOfMembers || resultOptions.IncludeManagersOfMembers {
+	if resultOptions.IncludeOnlyManagersOfResult || resultOptions.IncludeManagersOfResult {
 		var err error
 		managersInQuery, err = s.fetchUsersByUID(ctx, managersInQuery.UIDs())
 		if err != nil {
@@ -32,21 +33,19 @@ func (s *Service) addManagersFromQuery(
 	return append(members, managersInQuery...), append(managers, managersInQuery...), nil
 }
 
-// selectMembers applies include_only_managers and of-members result_options.
-func selectMembers(members, managers types.QueryMembers, query *v1alpha1.LDAPQuery) types.QueryMembers {
-	if queryHasOnlyManagers(query) {
+// applyResultOptions applies include_only_managers and of-result result_options.
+func applyResultOptions(members, managers types.QueryMembers, query *v1alpha1.LDAPQuery) types.QueryMembers {
+	opts := queryResultOptions(query)
+
+	if opts.IncludeOnlyManagers {
 		members = managers
 	}
-	return applyOfMembersOptions(members, queryResultOptions(query))
-}
 
-// applyOfMembersOptions transforms the member set using of-members result_options.
-func applyOfMembersOptions(members types.QueryMembers, opts v1alpha1.LDAPQueryResultOptions) types.QueryMembers {
-	if opts.IncludeManagersOfMembers {
+	if opts.IncludeManagersOfResult {
 		members = append(members, members.Managers()...)
 	}
 
-	if opts.IncludeOnlyManagersOfMembers {
+	if opts.IncludeOnlyManagersOfResult {
 		return members.Managers()
 	}
 

@@ -535,61 +535,6 @@ func TestMainBranchRootQueryOptionsCompat(t *testing.T) {
 	assert.ElementsMatch(t, []string{"alice", "bob", "carol", "pbhattac"}, members)
 }
 
-func TestQueryHasOnlyManagers(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name  string
-		query *usernautdevv1alpha1.LDAPQuery
-		want  bool
-	}{
-		{
-			name:  "nil query",
-			query: nil,
-			want:  false,
-		},
-		{
-			name: "indirect reports without include_only_managers",
-			query: &usernautdevv1alpha1.LDAPQuery{
-				Operator: "and",
-				Filters: []usernautdevv1alpha1.LDAPFilter{
-					{Key: "manager", Criteria: "equals", Value: "mgrAlpha", Options: irOptions()},
-				},
-			},
-			want: false,
-		},
-		{
-			name: "result include_only_managers",
-			query: &usernautdevv1alpha1.LDAPQuery{
-				Operator:      "and",
-				Options:       &usernautdevv1alpha1.LDAPQueryOptions{IncludeIndirectReports: true},
-				ResultOptions: &usernautdevv1alpha1.LDAPQueryResultOptions{IncludeOnlyManagers: true},
-				Filters: []usernautdevv1alpha1.LDAPFilter{
-					{Key: "manager", Criteria: "equals", Value: "mgrAlpha"},
-				},
-			},
-			want: true,
-		},
-		{
-			name: "filter-level options alone do not set result include_only_managers",
-			query: &usernautdevv1alpha1.LDAPQuery{
-				Operator: "and",
-				Filters: []usernautdevv1alpha1.LDAPFilter{
-					{Key: "manager", Criteria: "equals", Value: "mgrAlpha", Options: irOptions()},
-				},
-			},
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			assert.Equal(t, tt.want, queryHasOnlyManagers(tt.query))
-		})
-	}
-}
-
 type orgLDAPStub struct {
 	reports        map[string][]string
 	managers       map[string]string
@@ -768,7 +713,7 @@ func TestMembers_RootOptionsFallback(t *testing.T) {
 	assert.ElementsMatch(t, []string{"alice", "dave", "pbhattac"}, got)
 }
 
-func TestMembers_IncludeOnlyManagersOfMembers(t *testing.T) {
+func TestMembers_IncludeOnlyManagersOfResult(t *testing.T) {
 	t.Parallel()
 
 	service := New(&orgLDAPStub{
@@ -783,7 +728,7 @@ func TestMembers_IncludeOnlyManagersOfMembers(t *testing.T) {
 
 	query := &usernautdevv1alpha1.LDAPQuery{
 		Operator:      "and",
-		ResultOptions: &usernautdevv1alpha1.LDAPQueryResultOptions{IncludeOnlyManagersOfMembers: true},
+		ResultOptions: &usernautdevv1alpha1.LDAPQueryResultOptions{IncludeOnlyManagersOfResult: true},
 		Filters: []usernautdevv1alpha1.LDAPFilter{
 			{Key: "manager", Criteria: "equals", Value: "pbhattac"},
 		},
@@ -794,7 +739,7 @@ func TestMembers_IncludeOnlyManagersOfMembers(t *testing.T) {
 	assert.ElementsMatch(t, []string{"pbhattac", "otherboss"}, got)
 }
 
-func TestMembers_IncludeManagersOfMembers(t *testing.T) {
+func TestMembers_IncludeManagersOfResult(t *testing.T) {
 	t.Parallel()
 
 	service := New(&orgLDAPStub{
@@ -809,7 +754,7 @@ func TestMembers_IncludeManagersOfMembers(t *testing.T) {
 
 	query := &usernautdevv1alpha1.LDAPQuery{
 		Operator:      "and",
-		ResultOptions: &usernautdevv1alpha1.LDAPQueryResultOptions{IncludeManagersOfMembers: true},
+		ResultOptions: &usernautdevv1alpha1.LDAPQueryResultOptions{IncludeManagersOfResult: true},
 		Filters: []usernautdevv1alpha1.LDAPFilter{
 			{Key: "manager", Criteria: "equals", Value: "pbhattac"},
 		},

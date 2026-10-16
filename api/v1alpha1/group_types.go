@@ -104,14 +104,13 @@ type LDAPQueryOptions struct {
 
 // LDAPQueryResultOptions are applied to the member set after the query (and optional IR) completes.
 type LDAPQueryResultOptions struct {
-	// IncludeOnlyManagers replaces the resolved member set with people who have reports
-	// (managers found during indirect-reports expansion or manager probes).
+	// IncludeOnlyManagers filters the resolved member set to people who have reports.
 	IncludeOnlyManagers bool `json:"include_only_managers,omitempty"`
-	// IncludeOnlyManagersOfMembers replaces the resolved member set with each member's
+	// IncludeOnlyManagersOfResult replaces the resolved member set with each member's
 	// manager (from LDAP).
-	IncludeOnlyManagersOfMembers bool `json:"include_only_managers_of_members,omitempty"`
-	// IncludeManagersOfMembers appends each member's manager (from LDAP) to the resolved set.
-	IncludeManagersOfMembers bool `json:"include_managers_of_members,omitempty"`
+	IncludeOnlyManagersOfResult bool `json:"include_only_managers_of_result,omitempty"`
+	// IncludeManagersOfResult appends each member's manager (from LDAP) to the resolved set.
+	IncludeManagersOfResult bool `json:"include_managers_of_result,omitempty"`
 }
 
 // LDAPFilterOptions applies to a manager filter. Missing or false fields are treated as disabled.
