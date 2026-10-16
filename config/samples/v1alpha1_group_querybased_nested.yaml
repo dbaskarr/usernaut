@@ -13,7 +13,6 @@ spec:
       operator: and
       filters:
         - ldap_query:
-            dummy: dummy
             operator: or
             filters:
               - key: title
@@ -27,7 +26,7 @@ spec:
             filters:
               - key: manager
                 criteria: equals
-                value: pbhattac
+                value: mgrAlpha
                 options:
                   include_indirect_reports: true
                   include_manager: false
@@ -36,7 +35,7 @@ spec:
                   filters:
                     - key: manager
                       criteria: equals
-                      value: rnikhal
+                      value: mgrGamma
                       options:
                         include_indirect_reports: false
                         include_manager: true
@@ -45,7 +44,7 @@ spec:
                         filters:
                           - key: rhatGeo
                             criteria: equals
-                            value: nas
+                            value: na
                           - key: rhatGeo
                             criteria: equals
                             value: apac

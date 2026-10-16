@@ -100,9 +100,7 @@ spec:
                           description: |-
                             LDAPFilter is a single LDAP filter item. Options may be set only when key is manager
                             and criteria is equals. Nested ldap_query is schemaless, so CEL cannot fully check it;
-                            reconcile-time validation enforces manager+equals (including nested items).
-                            CEL is limited to key==manager to stay within CRD rule-cost budget; criteria==equals
-                            is enforced at reconcile.
+                            reconcile-time validation enforces manager+equals on nested items.
                           properties:
                             criteria:
                               enum:
@@ -143,9 +141,11 @@ spec:
                               type: string
                           type: object
                           x-kubernetes-validations:
-                          - message: options is only allowed when key is manager
+                          - message: options is only allowed when key is manager and
+                              criteria is equals
                             rule: '!has(self.options) || (has(self.key) && self.key
-                              == ''manager'')'
+                              == ''manager'' && has(self.criteria) && self.criteria
+                              == ''equals'')'
                         maxItems: 32
                         minItems: 1
                         type: array

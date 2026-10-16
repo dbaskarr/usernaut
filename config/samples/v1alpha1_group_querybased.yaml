@@ -4,10 +4,10 @@ metadata:
   labels:
     app.kubernetes.io/name: usernaut
     app.kubernetes.io/managed-by: kustomize
-  name: dataverse-aggregate-group
+  name: dataverse-aggregate-mygroupquerybased
   namespace: usernaut
 spec:
-  group_name: dataverse-aggregate-group
+  group_name: dataverse-aggregate-mygroupquerybased
   members:
     ldap_query:
       options:  # deprecated search fallbacks (main-compatible)
@@ -21,7 +21,7 @@ spec:
       filters:  # key: LDAP attribute (e.g. manager, title, givenName, employeeType, rhatGeo, co, st). See DEVELOPMENT.md for full list.
         - key: manager
           criteria: equals
-          value: pbhattac  # user ID only (expanded to uid=pbhattac,<baseUserDN>)
+          value: foo  # user ID only (expanded to uid=foo,<baseUserDN>)
           options:
             include_manager: false
             include_indirect_reports: false
@@ -30,11 +30,13 @@ spec:
             filters:
               - key: manager
                 criteria: equals
-                value: felr  # user ID only (expanded to uid=felr,<baseUserDN>)
+                value: bar  # user ID only (expanded to uid=bar,<baseUserDN>)
                 options:
                   include_manager: false
                   include_indirect_reports: false
-    users: []
+    users:
+      - subhatta
+      - arijroy
   backends:
-  - name: rover
-    type: rover
+  - name: snowflake
+    type: snowflake

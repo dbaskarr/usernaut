@@ -41,11 +41,9 @@ type Backend struct {
 
 // LDAPFilter is a single LDAP filter item. Options may be set only when key is manager
 // and criteria is equals. Nested ldap_query is schemaless, so CEL cannot fully check it;
-// reconcile-time validation enforces manager+equals (including nested items).
-// CEL is limited to key==manager to stay within CRD rule-cost budget; criteria==equals
-// is enforced at reconcile.
+// reconcile-time validation enforces manager+equals on nested items.
 //
-// +kubebuilder:validation:XValidation:rule="!has(self.options) || (has(self.key) && self.key == 'manager')",message="options is only allowed when key is manager"
+// +kubebuilder:validation:XValidation:rule="!has(self.options) || (has(self.key) && self.key == 'manager' && has(self.criteria) && self.criteria == 'equals')",message="options is only allowed when key is manager and criteria is equals"
 type LDAPFilter struct {
 	// +optional
 	// +kubebuilder:validation:Enum=givenName;displayName;rhatJobTitle;title;employeeType;manager;rhatCostCenter;rhatCostCenterDesc;rhatGeo;co;st;rhatLocation;rhatOfficeLocation;rhatOfficeFloor;roomNumber

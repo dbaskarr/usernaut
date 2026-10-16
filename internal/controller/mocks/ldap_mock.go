@@ -148,18 +148,18 @@ func (mr *MockLDAPClientMockRecorder) GetBulkUserLDAPData(ctx, userIDs interface
 }
 
 // GetQueryMembers mocks base method.
-func (m *MockLDAPClient) GetQueryMembers(ctx context.Context, query string, attributes []string) (types.QueryMembers, error) {
+func (m *MockLDAPClient) GetQueryMembers(ctx context.Context, query string) (types.QueryMembers, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetQueryMembers", ctx, query, attributes)
+	ret := m.ctrl.Call(m, "GetQueryMembers", ctx, query)
 	ret0, _ := ret[0].(types.QueryMembers)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetQueryMembers indicates an expected call of GetQueryMembers.
-func (mr *MockLDAPClientMockRecorder) GetQueryMembers(ctx, query, attributes interface{}) *gomock.Call {
+func (mr *MockLDAPClientMockRecorder) GetQueryMembers(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQueryMembers", reflect.TypeOf((*MockLDAPClient)(nil).GetQueryMembers), ctx, query, attributes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQueryMembers", reflect.TypeOf((*MockLDAPClient)(nil).GetQueryMembers), ctx, query)
 }
 
 // GetUserLDAPData mocks base method.

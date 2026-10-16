@@ -43,7 +43,7 @@ func (suite *LDAPTestSuite) TestGetQueryMembers() {
 		attributes: []string{"cn", "description"},
 	}
 
-	resp, err := ldapConn.GetQueryMembers(suite.ctx, query, nil)
+	resp, err := ldapConn.GetQueryMembers(suite.ctx, query)
 
 	assertions.NoError(err)
 	assertions.Equal("example-user", resp[0].UID)
@@ -53,7 +53,7 @@ func (suite *LDAPTestSuite) TestGetQueryMembers() {
 		assertions.Equal(ldapConn.baseUserDN, capturedReq.BaseDN)
 		assertions.Equal(ldap.ScopeWholeSubtree, capturedReq.Scope)
 		assertions.Equal(query, capturedReq.Filter)
-		assertions.Equal([]string{"uid"}, capturedReq.Attributes)
+		assertions.Equal(defaultAttributes, capturedReq.Attributes)
 	}
 }
 
@@ -69,7 +69,7 @@ func (suite *LDAPTestSuite) TestGetQueryMembers_ContextCanceled() {
 		attributes: []string{"cn"},
 	}
 
-	resp, err := ldapConn.GetQueryMembers(ctx, "(objectClass=groupOfNames)", nil)
+	resp, err := ldapConn.GetQueryMembers(ctx, "(objectClass=groupOfNames)")
 
 	assertions.ErrorIs(err, context.Canceled)
 	assertions.Nil(resp)
@@ -88,13 +88,13 @@ func (suite *LDAPTestSuite) TestGetQueryMembers_NoEntriesFound() {
 	suite.ldapClient.EXPECT().IsClosing().Return(false).Times(1)
 	suite.ldapClient.EXPECT().Search(gomock.Any()).Return(&ldap.SearchResult{Entries: []*ldap.Entry{}}, nil).Times(1)
 
-	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)", nil)
+	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)")
 
 	assertions.NoError(err)
 	assertions.Empty(resp)
 }
 
-func (suite *LDAPTestSuite) TestGetQueryMembers_EmptyAttributes() {
+func (suite *LDAPTestSuite) TestGetQueryMembers_UIDFromDN() {
 	assertions := assert.New(suite.T())
 
 	searchResult := &ldap.SearchResult{
@@ -116,7 +116,7 @@ func (suite *LDAPTestSuite) TestGetQueryMembers_EmptyAttributes() {
 	suite.ldapClient.EXPECT().IsClosing().Return(false).Times(1)
 	suite.ldapClient.EXPECT().Search(gomock.Any()).Return(searchResult, nil).Times(1)
 
-	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)", nil)
+	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)")
 
 	assertions.NoError(err)
 	assertions.Equal("dn-only-user", resp[0].UID)
@@ -136,7 +136,7 @@ func (suite *LDAPTestSuite) TestGetQueryMembers_SearchError() {
 	suite.ldapClient.EXPECT().Search(gomock.Any()).
 		Return(nil, ldap.NewError(ldap.LDAPResultOperationsError, errors.New("search error"))).Times(1)
 
-	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)", nil)
+	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)")
 
 	assertions.Error(err)
 	assertions.Nil(resp)
@@ -152,7 +152,7 @@ func (suite *LDAPTestSuite) TestGetQueryMembers_NilConnection() {
 		attributes: []string{"cn"},
 	}
 
-	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)", nil)
+	resp, err := ldapConn.GetQueryMembers(suite.ctx, "(objectClass=groupOfNames)")
 
 	assertions.Error(err)
 	assertions.Nil(resp)
@@ -167,7 +167,7 @@ func (suite *LDAPTestSuite) TestGetQueryMembers_EmptyQuery() {
 		server:     "ldap://ldap.com:389",
 	}
 
-	resp, err := ldapConn.GetQueryMembers(suite.ctx, "", nil)
+	resp, err := ldapConn.GetQueryMembers(suite.ctx, "")
 
 	assertions.NoError(err)
 	assertions.Empty(resp)

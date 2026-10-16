@@ -12,6 +12,7 @@ type QueryMember struct {
 	Manager string
 }
 
+// QueryMembers is a list of QueryMember.
 type QueryMembers []QueryMember
 
 // UIDs returns the UID of each query member.

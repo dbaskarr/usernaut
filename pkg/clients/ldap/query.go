@@ -12,12 +12,11 @@ import (
 	"github.com/redhat-data-and-ai/usernaut/pkg/logger"
 )
 
-var defaultAttributes = []string{"uid"}
+var defaultAttributes = []string{"uid", "manager"}
 
-// GetQueryMembers searches LDAP with the given filter and returns QueryMember DTOs.
-// attributes defaults to []string{"uid"} when empty. Pass additional attrs (e.g. "manager")
-// when callers need them.
-func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string, attributes []string) (types.QueryMembers, error) {
+// GetQueryMembers searches LDAP with the given filter and returns QueryMember DTOs
+// (uid + manager attributes).
+func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string) (types.QueryMembers, error) {
 	// Do not call LDAP if the request context is already cancelled or its deadline has passed
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -31,15 +30,11 @@ func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string, attributes
 		return types.QueryMembers{}, nil
 	}
 
-	if len(attributes) == 0 {
-		attributes = defaultAttributes
-	}
-
 	searchRequest := ldap.NewSearchRequest(
 		l.baseUserDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 		query,
-		attributes,
+		defaultAttributes,
 		nil,
 	)
 
@@ -59,19 +54,20 @@ func (l *LDAPConn) GetQueryMembers(ctx context.Context, query string, attributes
 		return types.QueryMembers{}, nil
 	}
 
-	members := make(types.QueryMembers, 0, len(resp.Entries))
+	queryMembers := make(types.QueryMembers, 0, len(resp.Entries))
 	for _, entry := range resp.Entries {
 		uid := uidFromEntry(entry)
 		if uid == "" {
 			continue
 		}
-		members = append(members, types.QueryMember{
+		queryMembers = append(queryMembers, types.QueryMember{
 			UID:     uid,
 			Manager: entry.GetAttributeValue("manager"),
 		})
 	}
+
 	log.Info("fetched query members")
-	return members, nil
+	return queryMembers, nil
 }
 
 func uidFromEntry(entry *ldap.Entry) string {

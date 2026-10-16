@@ -545,7 +545,7 @@ func (s *orgLDAPStub) BuildLDAPQueryString(_ context.Context, query *usernautdev
 	return "mgr:" + managerUIDFromQuery(query), nil
 }
 
-func (s *orgLDAPStub) GetQueryMembers(_ context.Context, query string, _ []string) (types.QueryMembers, error) {
+func (s *orgLDAPStub) GetQueryMembers(_ context.Context, query string) (types.QueryMembers, error) {
 	uid := strings.TrimPrefix(query, "mgr:")
 	members, ok := s.reports[uid]
 	if !ok {
